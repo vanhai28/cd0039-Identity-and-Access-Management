@@ -1,4 +1,5 @@
 import os
+import sys
 from flask import Flask, Request, request, jsonify, abort
 from sqlalchemy import exc
 import json
@@ -36,7 +37,7 @@ def convertTableToList( table):
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 !! Running this funciton will add one
 '''
-# db_drop_and_create_all()
+#db_drop_and_create_all()
 
 # ROUTES
 '''
@@ -51,7 +52,7 @@ def convertTableToList( table):
 @cross_origin()
 def getDrinks():
     try:
-        data = Drink.query.all()
+        data = db.session.query(Drink).all()
         listDrinks = convertTableToList(data)
 
         drinks = []
@@ -65,6 +66,7 @@ def getDrinks():
             "drinks": drinks
         })
     except:
+        print('error: ',sys.exc_info())
         abort(500)
 '''
 @TODO implement endpoint
@@ -107,14 +109,14 @@ def getDrinksDetail(self):
 @cross_origin()
 @requires_auth("post:drinks")
 def addDrinks(self):
-    try:
-        data = request.get_json()
 
-        drink = Drink(title=data["title"], recipe=json.dumps(data["recipe"]))
-        drink.insert()
-        return {"ok": True, "drinks": drink}
-    except:
-        abort(500)
+    data = request.get_json()
+
+    drink = Drink(title=data["title"], recipe=json.dumps(data["recipe"]))
+    drink.insert()
+    customDrink = convertRowToObject(drink)
+    return jsonify({"success": True, "drinks": customDrink})
+
 '''
 @TODO implement endpoint
     PATCH /drinks/<id>
@@ -130,23 +132,22 @@ def addDrinks(self):
 @cross_origin()
 @requires_auth("patch:drinks")
 def patchDrinks(self, id):
-    try:
-        drink = Drink.query.filter(Drink.id == id).one_or_none()
 
-        if drink is None:
-            abort(404)
-            return
-        
-        data = request.get_json()
-        drink.recipe=json.dumps(data['recipe'])
-        drink.title=data['title']
-        drink.update()
+    drink = Drink.query.filter(Drink.id == id).one_or_none()
 
-        return jsonify({
-            "success": True, "drinks": drink.long()
-        })
-    except:
-        abort(500)
+    if drink is None:
+        abort(404)
+        return
+    
+    data = request.get_json()
+    drink.recipe=json.dumps(data['recipe'])
+    drink.title=data['title']
+    drink.update()
+
+    return jsonify({
+        "success": True, "drinks": drink.long()
+    })
+
 
 '''
 @TODO implement endpoint
