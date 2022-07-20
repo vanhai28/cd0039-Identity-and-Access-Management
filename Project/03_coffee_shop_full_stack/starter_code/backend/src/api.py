@@ -95,6 +95,7 @@ def getDrinksDetail(self):
             "drinks": customList
         })
     except:
+        print('error: ',sys.exc_info())
         abort(500)
 '''
 @TODO implement endpoint
@@ -109,14 +110,16 @@ def getDrinksDetail(self):
 @cross_origin()
 @requires_auth("post:drinks")
 def addDrinks(self):
+    try:
+        data = request.get_json()
 
-    data = request.get_json()
-
-    drink = Drink(title=data["title"], recipe=json.dumps(data["recipe"]))
-    drink.insert()
-    customDrink = convertRowToObject(drink)
-    return jsonify({"success": True, "drinks": customDrink})
-
+        drink = Drink(title=data["title"], recipe=json.dumps(data["recipe"]))
+        drink.insert()
+        customDrink = convertRowToObject(drink)
+        return jsonify({"success": True, "drinks": customDrink})
+    except:
+        print('error: ',sys.exc_info())
+        abort(500)
 '''
 @TODO implement endpoint
     PATCH /drinks/<id>
@@ -132,22 +135,24 @@ def addDrinks(self):
 @cross_origin()
 @requires_auth("patch:drinks")
 def patchDrinks(self, id):
+    try:
+        drink = Drink.query.filter(Drink.id == id).one_or_none()
 
-    drink = Drink.query.filter(Drink.id == id).one_or_none()
+        if drink is None:
+            abort(404)
+            return
+        
+        data = request.get_json()
+        drink.recipe=json.dumps(data['recipe'])
+        drink.title=data['title']
+        drink.update()
 
-    if drink is None:
-        abort(404)
-        return
-    
-    data = request.get_json()
-    drink.recipe=json.dumps(data['recipe'])
-    drink.title=data['title']
-    drink.update()
-
-    return jsonify({
-        "success": True, "drinks": drink.long()
-    })
-
+        return jsonify({
+            "success": True, "drinks": drink.long()
+        })
+    except:
+        print('error: ',sys.exc_info())
+        abort(500)
 
 '''
 @TODO implement endpoint
@@ -172,6 +177,7 @@ def removeDrinks(self,id):
         drink.delete()
         return jsonify({"success": True, "delete": id})
     except:
+        print('error: ',sys.exc_info())
         abort(500)
 
 # Error Handling
